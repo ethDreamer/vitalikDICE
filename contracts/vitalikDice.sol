@@ -157,9 +157,9 @@ contract vitalikDice is roller {
         }
 
         /* clear players for the next round */
-        roll10players.clear();
-        roll5players.clear();
-        roll2players.clear();
+        round_.roll10players.clear();
+        round_.roll5players.clear();
+        round_.roll2players.clear();
 
         round_.winnersPaid = true;
     }
