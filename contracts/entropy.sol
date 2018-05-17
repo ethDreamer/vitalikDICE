@@ -52,37 +52,29 @@ contract entropy {
     }
 
     /***************
-    * Everything after this point is testing code for the testing framwork to check
-    * that the probabilities are comming out right
+    * Everything after this point is testing code for the testing
+    * framwork to check that the probabilities are comming out right
     ***************/
 
     /* gotta have that house edge of 1.3% */
     uint private constant Q1            = 87  * TENTH_PERCENT;
     uint private constant Q2            = 187 * TENTH_PERCENT;
     uint private constant Q3            = 487 * TENTH_PERCENT;
-    uint private lastSeed_;
-    function testSeed(uint secret) public isOwner returns (uint) {
+
+    function testSeed(uint secret) public isOwner view returns (uint) {
         uint behind = 64;
         uint interval = 32;
         uint current = block.number;
         uint seed = getSeed(secret, current - behind, current - behind + interval);
-        lastSeed_ = seed;
-        return seed;
-    }
 
-    function testQ1() public view isOwner returns(uint) {
-        if (lastSeed_ <= Q1)
-            return 1;
-        return 0;
-    }
-    function testQ2() public view isOwner returns(uint) {
-        if (lastSeed_ <= Q2)
-            return 1;
-        return 0;
-    }
-    function testQ3() public view isOwner returns(uint) {
-        if (lastSeed_ <= Q3)
-            return 1;
-        return 0;
+        byte ret = 0x0;
+        if (seed <= Q1)
+            ret |= 0x1;
+        if (seed <= Q2)
+            ret |= 0x2;
+        if (seed <= Q3)
+            ret |= 0x4;
+
+        return uint(ret);
     }
 }

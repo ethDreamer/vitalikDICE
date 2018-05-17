@@ -5,7 +5,7 @@ import "contracts/addrStack.sol";
 //import "github.com/OpenZeppelin/openzeppelin-solidity/blob/master/contracts/math/SafeMath.sol";
 import "contracts/SafeMath.sol";
 
-contract vitalikDice is roller {
+contract vitalikDICE is roller {
     using SafeMath for uint;
 
     /* Launcher of contract */
