@@ -10,7 +10,8 @@ contract('entropy.sol   [this test takes ~1 minute to check probabilities]', fun
         var tcount = 0;
 
         function seedCall(instance, i) {
-            return instance.testSeed.call(i).then(function(result) {
+            return instance.testSeed.call(i)
+            .then(function(result) {
                 var qs = result.toNumber();
                 if ((qs & 1) == 1) {
                     p10++;
@@ -32,12 +33,13 @@ contract('entropy.sol   [this test takes ~1 minute to check probabilities]', fun
             }
 
             return seedCall(instance, 0);
-        }).then( function() {
+        })
+        .then(function() {
             p10 = 100*(p10/ntests);
             p20 = 100*(p20/ntests);
             p50 = 100*(p50/ntests);
 
-            console.log("should be ~8.7: ", p10);
+            console.log("should be ~8.7:  ", p10);
             console.log("should be ~18.7: ", p20);
             console.log("should be ~48.7: ", p50);
 
@@ -49,12 +51,10 @@ contract('entropy.sol   [this test takes ~1 minute to check probabilities]', fun
             if (p50 > 48 && p50 < 50)
                 c50 = 1;
 
-            assert.equal(c10, 1);
-            assert.equal(c20, 1);
-            assert.equal(c50, 1);
+            assert.equal(c10, 1, "10x probability out of range");
+            assert.equal(c20, 1, "5x  probability out of range");
+            assert.equal(c50, 1, "2x  probability out of range");
         });
-
     });
-
 });
 

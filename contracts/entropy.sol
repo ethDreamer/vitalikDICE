@@ -77,4 +77,43 @@ contract entropy {
 
         return uint(ret);
     }
+
+    function byteToChar (bytes1 _b) private pure returns (byte) {
+		uint _r;
+		if (uint(_b) > 9) {
+			_r = 55;
+		}
+		else {
+			_r = 48;
+		}
+		_r = _r + uint(_b);
+		return bytes1(_r);
+    }
+
+	function getHex(bytes32 byteData) public pure returns (string) {
+        bytes memory hexData  = new bytes(66);
+        hexData[0] = '0';
+        hexData[1] = 'x';
+
+        for (uint j=0; j<32; j++) {
+            byte b = byteData[j];
+            byte half1 = b >> 4;
+            byte half2 = b & 0xF;
+
+			hexData[2*j+2] = byteToChar(half1);
+			hexData[2*j+3] = byteToChar(half2);
+
+        }
+		return string(hexData);
+	}
+
+	function doubleHash(uint data) external pure returns(string) {
+		bytes32 x = keccak256(keccak256(bytes32(data)));
+		return getHex(x);
+	}
+
+	function getHexUint(uint data) public pure returns(string) {
+		return getHex(bytes32(data));
+	}
 }
+

@@ -10,7 +10,7 @@ contract vitalikDICE is roller {
 
     /* Launcher of contract */
     address private owner_;
-    /*************
+    /***********************************************************
     *   INIT_BLOCK_DELAY:
     *       Number of blocks to wait between initializing
     *       a new betting round and opening up betting
@@ -21,17 +21,17 @@ contract vitalikDICE is roller {
     *       before winners can be decided
     *   MINIMUM_BET:
     *       Minimum ether to place a bet
-    **************/
+    *************************************************************/
     uint private constant INIT_BLOCK_DELAY = 2;
     uint private constant BETTING_INTERVAL = 16;
     uint private constant ENTROPY_INTERVAL = 16;
     uint private constant MINIMUM_BET      = 0.01 ether;
     /* odds for winning have a house edge of 1.3% */
-    uint private constant MAX_UINT      = 2**256 - 1;
-    uint private constant TENTH_PERCENT = MAX_UINT / 1000;
-    uint private constant WIN10X        = 87  * TENTH_PERCENT;
-    uint private constant WIN5X         = 187 * TENTH_PERCENT;
-    uint private constant WIN2X         = 487 * TENTH_PERCENT;
+    uint private constant MAX_UINT         = 2**256 - 1;
+    uint private constant TENTH_PERCENT    = MAX_UINT / 1000;
+    uint private constant WIN10X           = 87  * TENTH_PERCENT;
+    uint private constant WIN5X            = 187 * TENTH_PERCENT;
+    uint private constant WIN2X            = 487 * TENTH_PERCENT;
 
     struct betRound {
         uint initBlock;             /* block height of this betting round */
@@ -50,7 +50,23 @@ contract vitalikDICE is roller {
         round_.roll2players  = new addrStack();
         round_.roll5players  = new addrStack();
         round_.roll10players = new addrStack();
+        round_.winnersPaid   = true;
         pool_ = new entropy();
+    }
+
+    /* deposit funds into contract to pay out bets */
+    function deposit() external payable isOwner {
+        /* have to send money in transaction */
+        assert(msg.value > 0);
+    }
+    /* withdraw funds from contract */
+    function withdraw(uint amount) external isOwner {
+        /* have to be able to cover amount */
+        assert(address(this).balance >= amount);
+        /* winners must have been paid already */
+        assert(round_.winnersPaid);
+        /* transfer funds to owner */
+        msg.sender.transfer(amount);
     }
 
     /* Are we in the betting period now? */
@@ -111,6 +127,13 @@ contract vitalikDICE is roller {
         round_.secretHash = secretHash;
     }
 
+    /* emits the outcome of this round */
+    event roundOutcome(
+        bool roll10x,
+        bool roll5x,
+        bool roll2x
+    );
+
     function distributeFunds(uint secret)
         external
         isOwner {
@@ -128,8 +151,13 @@ contract vitalikDICE is roller {
             revert();
 
         /* calculate the pseudorandom seed */
-        uint seed = pool_.getSeed(secret, (round_.initBlock + INIT_BLOCK_DELAY), (round_.initBlock + INIT_BLOCK_DELAY + BETTING_INTERVAL + ENTROPY_INTERVAL));
+        uint seed = pool_.getSeed(secret, (round_.initBlock + INIT_BLOCK_DELAY),
+                (round_.initBlock + INIT_BLOCK_DELAY + BETTING_INTERVAL + ENTROPY_INTERVAL));
 
+        /* log round outcome */
+        emit roundOutcome((seed <= WIN10X), (seed <= WIN5X), (seed <= WIN2X));
+
+        /* pay winners */
         uint size; address addr; uint winnings; uint i;
         if (seed <= WIN10X) {
             size = round_.roll10players.size();
@@ -165,7 +193,7 @@ contract vitalikDICE is roller {
     }
 
     /* roll2x functionality */
-    function roll2x() payable external { // validBet {
+    function roll2x() payable external validBet {
         round_.liabilities = round_.liabilities.add(msg.value.mul(2));
         /* can't place a bet we can't pay out */
         if (round_.liabilities >= address(this).balance)
@@ -173,7 +201,7 @@ contract vitalikDICE is roller {
         round_.roll2players.push(msg.sender, msg.value);
     }
     /* roll5x functionality */
-    function roll5x() payable external { // validBet {
+    function roll5x() payable external validBet {
         round_.liabilities = round_.liabilities.add(msg.value.mul(5));
         /* can't place a bet we can't pay out */
         if (round_.liabilities >= address(this).balance)
@@ -181,7 +209,7 @@ contract vitalikDICE is roller {
         round_.roll5players.push(msg.sender, msg.value);
     }
     /* roll10x functionality */
-    function roll10x() payable external { // validBet {
+    function roll10x() payable external validBet {
         round_.liabilities = round_.liabilities.add(msg.value.mul(10));
         /* can't place a bet we can't pay out */
         if (round_.liabilities >= address(this).balance)
